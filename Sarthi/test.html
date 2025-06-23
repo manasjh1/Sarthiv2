@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reflection Platform - Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        input, textarea, button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Reflection Platform - API Test</h1>
+        <p>Simple test interface for your FastAPI backend</p>
+
+        <!-- API Configuration -->
+        <div class="section">
+            <h3>⚙️ API Configuration</h3>
+            <input type="text" id="apiUrl" value="http://localhost:8000/api" placeholder="API Base URL">
+        </div>
+
+        <!-- Step 1: Create User -->
+        <div class="section">
+            <h3>👤 Step 1: Create User</h3>
+            <input type="text" id="userName" placeholder="Name" value="">
+            <input type="email" id="userEmail" placeholder="Email" value="">
+            <input type="number" id="userPhone" placeholder="Phone (optional)" value="">
+            <input type="number" id="proficiencyScore" placeholder="Proficiency Score" value="" min="0" max="4">
+            <button onclick="createUser()">Create User</button>
+            <div id="userResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Step 2: Start Reflection -->
+        <div class="section">
+            <h3>🚀 Step 2: Start Reflection</h3>
+            <input type="text" id="userId" placeholder="User ID (from step 1)">
+            <button onclick="startReflection()">Start Reflection</button>
+            <div id="reflectionResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Step 3: Set Category -->
+        <div class="section">
+            <h3>📝 Step 3: Set Category</h3>
+            <input type="text" id="reflectionId" placeholder="Reflection ID (from step 2)">
+            <input type="text" id="categoryName" placeholder="Category Name" value="feedback">
+            <button onclick="setCategory()">Set Category</button>
+            <div id="categoryResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Step 4: Advance Stages -->
+        <div class="section">
+            <h3>🎯 Step 4: Advance Stages</h3>
+            <p><strong>Stage 2:</strong> Enter recipient name</p>
+            <input type="text" id="recipientName" placeholder="Recipient Name" value="">
+            <button onclick="advanceStage('recipientName')">Set Recipient Name</button>
+            <div id="stage2Result" class="result" style="display:none;"></div>
+
+            <p><strong>Stage 3:</strong> Enter relationship</p>
+            <input type="text" id="relationship" placeholder="Relationship" value="">
+            <button onclick="advanceStage('relationship')">Set Relationship</button>
+            <div id="stage3Result" class="result" style="display:none;"></div>
+
+            <p><strong>Stage 4:</strong> Enter message</p>
+            <textarea id="message" placeholder="Your message..." rows="3"></textarea>
+            <button onclick="advanceStage('message')">Set Message</button>
+            <div id="stage4Result" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Quick Test All -->
+        <div class="section">
+            <h3>⚡ Quick Test: Run All Steps</h3>
+            <button onclick="runAllSteps()" id="runAllBtn">Run Complete Workflow</button>
+            <div id="allStepsResult" class="result" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        function getApiUrl() {
+            return document.getElementById('apiUrl').value;
+        }
+
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${isError ? 'error' : 'success'}`;
+            element.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+        }
+
+        async function createUser() {
+            try {
+                const response = await fetch(`${getApiUrl()}/users/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: document.getElementById('userName').value,
+                        email: document.getElementById('userEmail').value,
+                        phone_number: parseInt(document.getElementById('userPhone').value) || null,
+                        proficiency_score: parseInt(document.getElementById('proficiencyScore').value) || 0
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    document.getElementById('userId').value = data.user_id;
+                    showResult('userResult', data);
+                } else {
+                    showResult('userResult', data, true);
+                }
+            } catch (error) {
+                showResult('userResult', `Error: ${error.message}`, true);
+            }
+        }
+
+        async function startReflection() {
+            try {
+                const response = await fetch(`${getApiUrl()}/reflection/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: document.getElementById('userId').value
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    document.getElementById('reflectionId').value = data.reflection_id;
+                    showResult('reflectionResult', data);
+                } else {
+                    showResult('reflectionResult', data, true);
+                }
+            } catch (error) {
+                showResult('reflectionResult', `Error: ${error.message}`, true);
+            }
+        }
+
+        async function setCategory() {
+            try {
+                const response = await fetch(`${getApiUrl()}/reflection/category`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        reflection_id: document.getElementById('reflectionId').value,
+                        category_name: document.getElementById('categoryName').value
+                    })
+                });
+
+                const data = await response.json();
+                showResult('categoryResult', data, !response.ok);
+            } catch (error) {
+                showResult('categoryResult', `Error: ${error.message}`, true);
+            }
+        }
+
+        async function advanceStage(inputId) {
+            try {
+                const userInput = document.getElementById(inputId).value;
+                const response = await fetch(`${getApiUrl()}/reflection/next`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        reflection_id: document.getElementById('reflectionId').value,
+                        user_input: userInput
+                    })
+                });
+
+                const data = await response.json();
+                const resultId = inputId === 'recipientName' ? 'stage2Result' : 
+                               inputId === 'relationship' ? 'stage3Result' : 'stage4Result';
+                showResult(resultId, data, !response.ok);
+            } catch (error) {
+                const resultId = inputId === 'recipientName' ? 'stage2Result' : 
+                               inputId === 'relationship' ? 'stage3Result' : 'stage4Result';
+                showResult(resultId, `Error: ${error.message}`, true);
+            }
+        }
+
+        async function runAllSteps() {
+            const btn = document.getElementById('runAllBtn');
+            btn.disabled = true;
+            btn.textContent = 'Running...';
+            
+            let results = [];
+            
+            try {
+                // Step 1: Create User
+                results.push('=== STEP 1: Creating User ===');
+                await createUser();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Step 2: Start Reflection
+                results.push('=== STEP 2: Starting Reflection ===');
+                await startReflection();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Step 3: Set Category
+                results.push('=== STEP 3: Setting Category ===');
+                await setCategory();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Step 4a: Set Recipient
+                results.push('=== STEP 4a: Setting Recipient ===');
+                await advanceStage('recipientName');
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Step 4b: Set Relationship
+                results.push('=== STEP 4b: Setting Relationship ===');
+                await advanceStage('relationship');
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Step 4c: Set Message
+                results.push('=== STEP 4c: Setting Message ===');
+                await advanceStage('message');
+                
+                results.push('=== WORKFLOW COMPLETED SUCCESSFULLY! ===');
+                showResult('allStepsResult', results.join('\n'));
+                
+            } catch (error) {
+                results.push(`=== ERROR: ${error.message} ===`);
+                showResult('allStepsResult', results.join('\n'), true);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Run Complete Workflow';
+            }
+        }
+    </script>
+</body>
+</html>
